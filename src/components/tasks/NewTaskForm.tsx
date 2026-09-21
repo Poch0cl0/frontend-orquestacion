@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Cpu, RotateCw, ShieldCheck, Zap } from "lucide-react";
+import { AlertCircle, Cpu, FolderGit2, RotateCw, ShieldCheck, Zap } from "lucide-react";
 import { Textarea } from "@/components/ui/Textarea";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { useTasks } from "@/hooks/useTasks";
 import { useToast } from "@/components/ui/Toast";
+import { listRepos, type RepoEntry } from "@/services/tasks.service";
 
 const OBJECTIVE_MAX = 500;
 const OBJECTIVE_MIN = 10;
@@ -18,6 +20,7 @@ interface FormErrors {
   objective?: string;
   maxIterations?: string;
   tokenLimit?: string;
+  targetRepoId?: string;
 }
 
 export function NewTaskForm() {
@@ -28,8 +31,22 @@ export function NewTaskForm() {
   const [objective, setObjective] = useState("");
   const [maxIterations, setMaxIterations] = useState("5");
   const [tokenLimit, setTokenLimit] = useState("4000");
+  const [repos, setRepos] = useState<RepoEntry[]>([]);
+  const [targetRepoId, setTargetRepoId] = useState("demo");
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    listRepos()
+      .then((items) => {
+        setRepos(items);
+        const preferred = items.find((r) => r.isDefault) ?? items[0];
+        if (preferred) setTargetRepoId(preferred.id);
+      })
+      .catch(() => {
+        setRepos([{ id: "demo", name: "Demo ARGUS (local)", path: "./demo-target-repo", isDefault: true }]);
+      });
+  }, []);
 
   function validate(): FormErrors {
     const next: FormErrors = {};
@@ -50,6 +67,10 @@ export function NewTaskForm() {
       next.tokenLimit = `Debe estar entre ${TOKENS_RANGE.min.toLocaleString("es-ES")} y ${TOKENS_RANGE.max.toLocaleString("es-ES")}`;
     }
 
+    if (!targetRepoId) {
+      next.targetRepoId = "Selecciona un repositorio destino";
+    }
+
     return next;
   }
 
@@ -66,6 +87,7 @@ export function NewTaskForm() {
         objective: objective.trim(),
         maxIterations: Number(maxIterations),
         tokenLimit: Number(tokenLimit),
+        targetRepoId,
       });
       toast("Tarea creada exitosamente", "success", `ID #${task.id} · En cola de análisis`);
       router.push("/");
@@ -83,6 +105,7 @@ export function NewTaskForm() {
   }
 
   const objectiveError = touched ? errors.objective : undefined;
+  const selectedRepo = repos.find((r) => r.id === targetRepoId);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
@@ -128,6 +151,32 @@ export function NewTaskForm() {
           </div>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <Select
+            id="targetRepoId"
+            name="targetRepoId"
+            label="Repositorio destino"
+            value={targetRepoId}
+            onChange={(e) => setTargetRepoId(e.target.value)}
+            options={repos.map((r) => ({
+              value: r.id,
+              label: r.isDefault ? `${r.name} (default)` : r.name,
+            }))}
+          />
+          {selectedRepo && (
+            <p className="text-body-sm text-ink-muted flex items-start gap-2">
+              <FolderGit2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                Tras la aprobación COBIT, ARGUS escribirá el plan y hará commit en:{" "}
+                <code className="text-code text-brand font-mono">{selectedRepo.path}</code>
+              </span>
+            </p>
+          )}
+          {touched && errors.targetRepoId && (
+            <span className="text-label-md font-medium text-rose-600">{errors.targetRepoId}</span>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
           <Input
             id="maxIterations"
@@ -169,7 +218,7 @@ export function NewTaskForm() {
             <p className="text-body-md text-ink leading-relaxed">
               ARGUS evaluará esta tarea mediante consenso{" "}
               <strong className="text-brand font-semibold">Ejecutor ↔ Auditor COBIT</strong> antes de
-              ejecutar cualquier acción.
+              modificar el repositorio destino.
             </p>
           </div>
         </aside>

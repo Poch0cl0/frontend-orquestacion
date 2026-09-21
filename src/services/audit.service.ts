@@ -4,17 +4,19 @@ import { isMockMode } from "@/transport/types";
 import { mockAuditLogs } from "@/mocks/audit";
 
 function filterLogs(logs: AuditLog[], filters: AuditFilters): AuditLog[] {
-  return logs.filter((log) => {
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      if (!log.objective.toLowerCase().includes(q) && !log.id.includes(q)) return false;
-    }
-    if (filters.status && filters.status !== "all" && log.decision !== filters.status) return false;
-    if (filters.risk && filters.risk !== "all" && log.risk !== filters.risk) return false;
-    if (filters.dateFrom && new Date(log.timestamp) < new Date(filters.dateFrom)) return false;
-    if (filters.dateTo && new Date(log.timestamp) > new Date(filters.dateTo)) return false;
-    return true;
-  });
+  return logs
+    .filter((log) => {
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        if (!log.objective.toLowerCase().includes(q) && !log.id.includes(q)) return false;
+      }
+      if (filters.status && filters.status !== "all" && log.decision !== filters.status) return false;
+      if (filters.risk && filters.risk !== "all" && log.risk !== filters.risk) return false;
+      if (filters.dateFrom && new Date(log.timestamp) < new Date(filters.dateFrom)) return false;
+      if (filters.dateTo && new Date(log.timestamp) > new Date(filters.dateTo)) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
 export async function getAuditHistory(
@@ -42,6 +44,8 @@ export async function getAuditHistory(
   if (filters.search) params.set("search", filters.search);
   if (filters.status) params.set("status", filters.status);
   if (filters.risk) params.set("risk", filters.risk);
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
   return apiFetch<PaginatedResult<AuditLog>>(`/audit/history?${params}`);
 }
 

@@ -11,6 +11,10 @@ import { cn } from "@/lib/cn";
 const COLUMNS = ["ID", "Objetivo", "Estado", "Iteraciones", "Riesgo", "Fecha"];
 
 export function AuditTable({ records, onView }: { records: AuditLog[]; onView: (id: string) => void }) {
+  const ordered = [...records].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  );
+
   return (
     <>
       <div className="surface-card hidden overflow-hidden md:block">
@@ -35,7 +39,7 @@ export function AuditTable({ records, onView }: { records: AuditLog[]; onView: (
             </tr>
           </thead>
           <tbody className="divide-y divide-line/20">
-            {records.map((record) => (
+            {ordered.map((record) => (
               <tr key={record.id} className="hover:bg-surface-low/70 transition-colors">
                 <td className="text-code text-ink-subtle px-3 py-2.5 font-mono tabular-nums">
                   #{record.id}
@@ -82,7 +86,7 @@ export function AuditTable({ records, onView }: { records: AuditLog[]; onView: (
       </div>
 
       <div className="flex flex-col gap-3 md:hidden">
-        {records.map((record) => (
+        {ordered.map((record) => (
           <article key={record.id} className="surface-card p-4">
             <div className="flex items-start justify-between gap-2">
               <span className="text-code text-ink-subtle font-mono tabular-nums">#{record.id}</span>

@@ -92,12 +92,19 @@ function applyEvent(state: ArgusStreamState, event: ArgusEvent): ArgusStreamStat
         title: isRevision ? "Plan actualizado" : "Plan generado",
         description: proposal.reason,
         iteration: proposal.iteration,
+        proposal,
       }),
     };
   }
 
   if (event.type === "audit_rejected") {
     const { verdict } = event.payload;
+    const relatedProposal =
+      [...state.timeline]
+        .reverse()
+        .find((e) => e.proposal && (e.iteration ?? 0) <= verdict.iteration)?.proposal ??
+      state.executorProposal ??
+      undefined;
     return {
       ...state,
       status: "DEBATING",
@@ -111,12 +118,20 @@ function applyEvent(state: ArgusStreamState, event: ArgusEvent): ArgusStreamStat
         description: verdict.reason,
         iteration: verdict.iteration,
         risk: verdict.risk,
+        verdict,
+        proposal: relatedProposal,
       }),
     };
   }
 
   if (event.type === "audit_approved") {
     const { verdict } = event.payload;
+    const relatedProposal =
+      [...state.timeline]
+        .reverse()
+        .find((e) => e.proposal && (e.iteration ?? 0) <= verdict.iteration)?.proposal ??
+      state.executorProposal ??
+      undefined;
     return {
       ...state,
       status: "APPROVED",
@@ -130,6 +145,8 @@ function applyEvent(state: ArgusStreamState, event: ArgusEvent): ArgusStreamStat
         description: verdict.reason,
         iteration: verdict.iteration,
         risk: verdict.risk,
+        verdict,
+        proposal: relatedProposal,
       }),
     };
   }

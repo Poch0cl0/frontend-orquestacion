@@ -76,7 +76,17 @@ function resolveVisual(entry: TimelineEntry): EventVisual {
   return VISUALS[entry.type] ?? AGENT_FALLBACK[entry.agent];
 }
 
-export function DebateTimeline({ entries }: { entries: TimelineEntry[] }) {
+export function isDetailEntry(entry: TimelineEntry): boolean {
+  return Boolean(entry.proposal || entry.verdict);
+}
+
+interface DebateTimelineProps {
+  entries: TimelineEntry[];
+  selectedId?: string | null;
+  onSelect?: (entry: TimelineEntry) => void;
+}
+
+export function DebateTimeline({ entries, selectedId = null, onSelect }: DebateTimelineProps) {
   if (entries.length === 0) {
     return (
       <p className="text-body-md text-ink-subtle py-10 text-center">
@@ -101,74 +111,145 @@ export function DebateTimeline({ entries }: { entries: TimelineEntry[] }) {
           const visual = resolveVisual(entry);
           const Icon = visual.icon;
           const isLatest = index === entries.length - 1;
+          const selectable = isDetailEntry(entry);
+          const selected = selectedId === entry.id;
 
           return (
-            <li
-              key={entry.id}
-              className={cn(
-                "relative flex items-start gap-4 transition-colors duration-500",
-                entry.isNew && "animate-in",
-                isLatest && "-mx-3 rounded-xl border border-brand-dim/60 bg-brand-soft/20 p-3",
-              )}
-            >
-              <span
-                className={cn(
-                  "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-xs",
-                  visual.nodeClass,
-                )}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
-              </span>
-
-              <div className="flex min-w-0 flex-1 flex-col pt-0.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span
-                    className={cn(
-                      "text-label-md text-ink font-sans font-semibold",
-                      visual.titleClass,
-                      isLatest && "text-brand",
-                    )}
-                  >
-                    {entry.title}
-                  </span>
-                  <time
-                    dateTime={entry.timestamp}
-                    className={cn("text-code text-ink-subtle font-mono tabular-nums", isLatest && "text-brand")}
-                  >
-                    {formatTime(entry.timestamp)}
-                  </time>
+            <li key={entry.id} className={cn("relative", entry.isNew && "animate-in")}>
+              {selectable ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect?.(entry)}
+                  aria-pressed={selected}
+                  aria-label={`Ver detalle de ${entry.title}`}
+                  className={cn(
+                    "relative flex w-full items-start gap-4 rounded-xl border p-3 text-left transition-colors duration-200",
+                    selected
+                      ? "border-brand bg-brand-soft/40 shadow-xs"
+                      : isLatest
+                        ? "border-brand-dim/60 bg-brand-soft/20 hover:border-brand/50"
+                        : entry.type === "audit_rejected"
+                          ? "border-rose-200/80 bg-rose-50/40 hover:border-rose-300 hover:bg-rose-50"
+                          : "border-transparent hover:border-line/40 hover:bg-surface-low/80",
+                  )}
+                >
+                  <TimelineRow
+                    entry={entry}
+                    visual={visual}
+                    Icon={Icon}
+                    isLatest={isLatest}
+                    selected={selected}
+                    showHint
+                  />
+                </button>
+              ) : (
+                <div
+                  className={cn(
+                    "relative flex items-start gap-4 transition-colors duration-500",
+                    isLatest && "-mx-3 rounded-xl border border-brand-dim/60 bg-brand-soft/20 p-3",
+                  )}
+                >
+                  <TimelineRow
+                    entry={entry}
+                    visual={visual}
+                    Icon={Icon}
+                    isLatest={isLatest}
+                    selected={false}
+                  />
                 </div>
-
-                {entry.description && (
-                  <p
-                    className={cn(
-                      "text-body-sm text-ink-muted mt-0.5",
-                      visual.descriptionClass,
-                      isLatest && "text-ink font-medium",
-                    )}
-                  >
-                    {entry.description}
-                  </p>
-                )}
-
-                {entry.iteration != null && (
-                  <div className="mt-1">
-                    <span
-                      className={cn(
-                        "text-label-micro text-ink-muted inline-block rounded border border-transparent bg-surface-low px-1.5 py-0.5 font-sans font-medium",
-                        visual.chipClass,
-                        isLatest && "bg-brand-soft text-brand-ink",
-                      )}
-                    >
-                      Iteración {entry.iteration}
-                    </span>
-                  </div>
-                )}
-              </div>
+              )}
             </li>
           );
         })}
       </ol>
     </div>
+  );
+}
+
+function TimelineRow({
+  entry,
+  visual,
+  Icon,
+  isLatest,
+  selected,
+  showHint,
+}: {
+  entry: TimelineEntry;
+  visual: EventVisual;
+  Icon: LucideIcon;
+  isLatest: boolean;
+  selected: boolean;
+  showHint?: boolean;
+}) {
+  return (
+    <>
+      <span
+        className={cn(
+          "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-xs",
+          visual.nodeClass,
+        )}
+      >
+        <Icon className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
+      </span>
+
+      <div className="flex min-w-0 flex-1 flex-col pt-0.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span
+            className={cn(
+              "text-label-md text-ink font-sans font-semibold",
+              visual.titleClass,
+              (isLatest || selected) && !visual.titleClass && "text-brand",
+            )}
+          >
+            {entry.title}
+          </span>
+          <time
+            dateTime={entry.timestamp}
+            className={cn(
+              "text-code text-ink-subtle font-mono tabular-nums",
+              (isLatest || selected) && "text-brand",
+            )}
+          >
+            {formatTime(entry.timestamp)}
+          </time>
+        </div>
+
+        {entry.description && (
+          <p
+            className={cn(
+              "text-body-sm text-ink-muted mt-0.5",
+              visual.descriptionClass,
+              (isLatest || selected) && "text-ink font-medium",
+            )}
+          >
+            {entry.description}
+          </p>
+        )}
+
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          {entry.iteration != null && (
+            <span
+              className={cn(
+                "text-label-micro text-ink-muted inline-block rounded border border-transparent bg-surface-low px-1.5 py-0.5 font-sans font-medium",
+                visual.chipClass,
+                (isLatest || selected) && !visual.chipClass && "bg-brand-soft text-brand-ink",
+              )}
+            >
+              Iteración {entry.iteration}
+            </span>
+          )}
+          {showHint && (
+            <span
+              className={cn(
+                "text-label-micro font-sans font-semibold tracking-[0.04em]",
+                selected ? "text-brand" : "text-ink-subtle",
+              )}
+            >
+              {selected ? "Detalle activo →" : "Click para ver detalle →"}
+            </span>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
+import { Download, ShieldCheck } from "lucide-react";
 import type { AuditLog } from "@/types";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { FieldLabel } from "@/components/ui/Card";
 import { ConsensusIndicator } from "@/components/dashboard/ConsensusIndicator";
 import { ExecutorCard } from "@/components/dashboard/ExecutorCard";
@@ -11,6 +12,9 @@ import { AuditTimeline } from "./AuditTimeline";
 import { DECISION_LABELS, DECISION_VARIANT, RISK_CONFIG } from "@/lib/status";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { downloadEvidenceMarkdown, evidenceFromAuditLog } from "@/lib/evidence";
+import { upsertEvidenceHistory } from "@/lib/evidence-history";
+import { useToast } from "@/components/ui/Toast";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -22,14 +26,28 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function AuditDetail({ record }: { record: AuditLog }) {
+  const { toast } = useToast();
   const lastProposal = record.proposals.at(-1) ?? null;
   const lastVerdict = record.verdicts.at(-1) ?? null;
 
+  function handleDownload() {
+    const payload = evidenceFromAuditLog(record);
+    downloadEvidenceMarkdown(payload);
+    upsertEvidenceHistory(payload);
+    toast("Evidencia PDF descargada", "success", `argus-evidencia-${record.id}.pdf`);
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <FieldLabel>Objetivo</FieldLabel>
-        <p className="text-body-lg text-ink font-medium">{record.objective}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <FieldLabel>Objetivo</FieldLabel>
+          <p className="text-body-lg text-ink font-medium">{record.objective}</p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
+          <Download className="h-3.5 w-3.5" aria-hidden="true" />
+          Descargar evidencia PDF
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

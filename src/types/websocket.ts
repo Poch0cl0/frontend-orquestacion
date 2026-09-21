@@ -106,4 +106,8 @@ export interface TimelineEntry {
   iteration?: number;
   risk?: RiskLevel;
   isNew?: boolean;
+  /** Snapshot del plan asociado (para ver detalle al hacer click en el timeline). */
+  proposal?: ExecutorProposal;
+  /** Snapshot del veredicto asociado (rechazo/aprobación). */
+  verdict?: AuditorVerdict;
 }

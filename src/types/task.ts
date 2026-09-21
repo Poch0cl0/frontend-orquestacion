@@ -31,6 +31,8 @@ export interface CreateTaskInput {
   objective: string;
   maxIterations: number;
   tokenLimit: number;
+  targetRepoId?: string;
+  targetRepoPath?: string;
 }
 
 export interface TaskSummary {

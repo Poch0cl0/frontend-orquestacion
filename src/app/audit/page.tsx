@@ -6,6 +6,7 @@ import { Breadcrumb, PageContainer, PageHeader } from "@/components/layout/PageC
 import { AuditFiltersBar } from "@/components/audit/AuditFilters";
 import { AuditPagination, AuditTable } from "@/components/audit/AuditTable";
 import { AuditDetail } from "@/components/audit/AuditDetail";
+import { EvidenceHistoryPanel } from "@/components/audit/EvidenceHistoryPanel";
 import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
@@ -20,46 +21,57 @@ export default function AuditPage() {
 
   return (
     <PageContainer>
-      <div className="flex w-full flex-col gap-5">
+      <div className="flex w-full flex-col gap-8">
         <PageHeader
           title="Auditoría"
-          description="Consulta el historial de ejecuciones y la trazabilidad de cada decisión."
+          description="Historial de decisiones y evidencias Markdown descargables."
           breadcrumb={<Breadcrumb path="Gobernanza / Evidencia" id="GET /audit/history" />}
         />
 
-        <AuditFiltersBar
-          filters={filters}
-          onChange={(next) => {
-            setFilters(next);
-            setPage(1);
-          }}
-        />
+        <EvidenceHistoryPanel />
 
-        {loading && <Spinner label="Cargando historial de auditoría..." />}
-
-        {error && (
-          <div
-            role="alert"
-            className="text-body-md rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700"
-          >
-            {error}
+        <section className="flex flex-col gap-5">
+          <div>
+            <h2 className="text-headline-sm text-ink font-sans">Historial de auditorías</h2>
+            <p className="text-body-sm text-ink-muted mt-0.5">
+              Ordenado del más reciente al más antiguo. Abre un registro para ver detalle o descargar evidencia.
+            </p>
           </div>
-        )}
 
-        {isEmpty && (
-          <EmptyState
-            icon={<History className="h-5 w-5" />}
-            title="Sin registros de auditoría"
-            description="Cuando ARGUS procese tu primera tarea, el historial de decisiones aparecerá aquí."
+          <AuditFiltersBar
+            filters={filters}
+            onChange={(next) => {
+              setFilters(next);
+              setPage(1);
+            }}
           />
-        )}
 
-        {!loading && result && result.data.length > 0 && (
-          <>
-            <AuditTable records={result.data} onView={setSelectedId} />
-            <AuditPagination page={page} totalPages={result.totalPages} onPageChange={setPage} />
-          </>
-        )}
+          {loading && <Spinner label="Cargando historial de auditoría..." />}
+
+          {error && (
+            <div
+              role="alert"
+              className="text-body-md rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700"
+            >
+              {error}
+            </div>
+          )}
+
+          {isEmpty && (
+            <EmptyState
+              icon={<History className="h-5 w-5" />}
+              title="Sin registros de auditoría"
+              description="Cuando ARGUS procese tu primera tarea, el historial de decisiones aparecerá aquí."
+            />
+          )}
+
+          {!loading && result && result.data.length > 0 && (
+            <>
+              <AuditTable records={result.data} onView={setSelectedId} />
+              <AuditPagination page={page} totalPages={result.totalPages} onPageChange={setPage} />
+            </>
+          )}
+        </section>
       </div>
 
       <Drawer
