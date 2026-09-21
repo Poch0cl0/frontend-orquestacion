@@ -61,7 +61,7 @@ export function evidenceFromAuditLog(record: AuditLog): EvidencePayload {
     timeline: record.trajectory.map((e) => ({
       title: e.title,
       description: e.description,
-      type: e.type,
+      type: e.type as TimelineEntry["type"],
       timestamp: e.timestamp,
       iteration: e.iteration,
     })),

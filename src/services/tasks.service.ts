@@ -21,13 +21,13 @@ export interface ValidateRepoResult {
 }
 
 /** Continúa la numeración del historial de auditoría para que los IDs de la demo sean coherentes. */
-let nextMockId = Math.max(...mockAuditLogs.map((log) => Number(log.id))) + 1;
+let nextMockId = mockAuditLogs.length > 0 ? Math.max(...mockAuditLogs.map((log) => Number(log.id) || 0)) + 1 : 1;
 
 const mockRepos: RepoEntry[] = [
   {
     id: "demo",
-    name: "Demo ARGUS (local)",
-    path: "./demo-target-repo",
+    name: "catalog-media",
+    path: "./catalog-media",
     isDefault: true,
   },
 ];

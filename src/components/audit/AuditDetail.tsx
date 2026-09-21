@@ -27,6 +27,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function AuditDetail({ record }: { record: AuditLog }) {
   const { toast } = useToast();
+  const rejectedVerdicts = record.verdicts.filter((v) => v.decision === "REJECTED");
+  const approvedVerdicts = record.verdicts.filter((v) => v.decision === "APPROVED");
   const lastProposal = record.proposals.at(-1) ?? null;
   const lastVerdict = record.verdicts.at(-1) ?? null;
 
@@ -66,18 +68,64 @@ export function AuditDetail({ record }: { record: AuditLog }) {
         </span>
       </div>
 
+      {rejectedVerdicts.length > 0 && (
+        <div className="flex items-start gap-3.5 rounded-xl border border-rose-200 bg-rose-50/80 p-4.5 shadow-xs">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700 font-bold text-sm">
+            !
+          </div>
+          <div className="flex flex-col gap-1.5 min-w-0">
+            <span className="text-label-micro font-sans font-bold tracking-[0.08em] text-rose-800 uppercase">
+              Hallazgo crítico de gobernanza (Iteración 1 · No Conformidad)
+            </span>
+            <p className="text-body-sm font-semibold text-rose-950 leading-relaxed">
+              {rejectedVerdicts[0].reason}
+            </p>
+            {rejectedVerdicts[0].feedback && (
+              <div className="mt-1 rounded-lg border border-rose-200/80 bg-white/80 p-2.5 text-body-xs text-rose-900">
+                <span className="font-bold text-rose-950">Instrucción requerida por el Auditor: </span>
+                {rejectedVerdicts[0].feedback}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <Section title="Timeline de ejecución">
         <AuditTimeline events={record.trajectory} />
       </Section>
 
+      {rejectedVerdicts.length > 0 && (
+        <Section title="Iteración 1: Veredicto de Rechazo de Auditoría">
+          <AuditorCard verdict={rejectedVerdicts[0]} />
+        </Section>
+      )}
+
+      {record.proposals.length > 1 && (
+        <Section title="Iteración 1: Propuesta inicial del Ejecutor (No Conforme)">
+          <ExecutorCard proposal={record.proposals[0]} />
+        </Section>
+      )}
+
       {lastProposal && (
-        <Section title="Última propuesta del Ejecutor">
+        <Section
+          title={
+            record.proposals.length > 1
+              ? `Iteración ${record.iterations}: Propuesta remediada del Ejecutor`
+              : "Propuesta del Ejecutor"
+          }
+        >
           <ExecutorCard proposal={lastProposal} />
         </Section>
       )}
 
       {lastVerdict && (
-        <Section title="Decisión del Auditor">
+        <Section
+          title={
+            rejectedVerdicts.length > 0
+              ? `Iteración ${record.iterations}: Decisión final del Auditor (Conformidad alcanzada)`
+              : "Decisión del Auditor"
+          }
+        >
           <AuditorCard verdict={lastVerdict} />
         </Section>
       )}

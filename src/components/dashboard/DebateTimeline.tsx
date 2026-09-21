@@ -226,6 +226,15 @@ function TimelineRow({
           </p>
         )}
 
+        {entry.type === "audit_rejected" && entry.verdict?.feedback && (
+          <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50/90 p-2.5 text-body-xs text-rose-900 shadow-xs">
+            <span className="mb-0.5 flex items-center gap-1 font-sans font-bold text-rose-950">
+              ⚠️ Instrucción correctiva del Auditor:
+            </span>
+            <p className="leading-relaxed">{entry.verdict.feedback}</p>
+          </div>
+        )}
+
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {entry.iteration != null && (
             <span

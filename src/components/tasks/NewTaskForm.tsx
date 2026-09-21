@@ -44,7 +44,7 @@ export function NewTaskForm() {
         if (preferred) setTargetRepoId(preferred.id);
       })
       .catch(() => {
-        setRepos([{ id: "demo", name: "Demo ARGUS (local)", path: "./demo-target-repo", isDefault: true }]);
+        setRepos([{ id: "demo", name: "catalog-media", path: "./demo-target-repo" }]);
       });
   }, []);
 
@@ -160,7 +160,7 @@ export function NewTaskForm() {
             onChange={(e) => setTargetRepoId(e.target.value)}
             options={repos.map((r) => ({
               value: r.id,
-              label: r.isDefault ? `${r.name} (default)` : r.name,
+              label: r.name,
             }))}
           />
           {selectedRepo && (
